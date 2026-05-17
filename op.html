@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>लाइव मल्टी-टैब मॉनिटर डैशबोर्ड</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .control-panel {
+            background-color: #1e293b;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            border: 1px solid #334155;
+            margin-bottom: 25px;
+        }
+        h2 {
+            color: #38bdf8;
+            margin-top: 0;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .input-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #94a3b8;
+        }
+        input[type="url"], input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            font-size: 15px;
+            background-color: #0f172a;
+            color: #fff;
+            box-sizing: border-box;
+        }
+        input:focus {
+            outline: none;
+            border-color: #38bdf8;
+        }
+        .btn-container {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            flex: 1;
+            background-color: #38bdf8;
+            color: #0f172a;
+            border: none;
+            padding: 12px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background-color: #0ea5e9;
+        }
+        button.clear-btn {
+            background-color: #ef4444;
+            color: white;
+        }
+        button.clear-btn:hover {
+            background-color: #dc2626;
+        }
+        .status-bar {
+            margin-top: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #4ade80;
+            text-align: center;
+            background: #0f172a;
+            padding: 8px;
+            border-radius: 6px;
+            display: none;
+        }
+        /* ग्रिड सिस्टम जहाँ सारे टैब दिखाई देंगे */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            width: 100%;
+            max-width: 1400px;
+        }
+        .tab-box {
+            background-color: #1e293b;
+            border: 2px solid #334155;
+            border-radius: 8px;
+            overflow: hidden;
+            height: 250px;
+            display: flex;
+            flex-direction: column;
+        }
+        .tab-header {
+            background-color: #334155;
+            padding: 5px 10px;
+            font-size: 12px;
+            color: #cbd5e1;
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background-color: white;
+        }
+    </style>
+</head>
+<body>
+
+<div class="control-panel">
+    <h2>🚀 लाइव मल्टी-टैब मॉनिटर डैशबोर्ड</h2>
+    
+    <div class="row">
+        <!-- लिंक इनपुट -->
+        <div class="input-group" style="flex: 2;">
+            <label for="webUrl">वेबसाइट का लिंक (URL) यहाँ पेस्ट करें:</label>
+            <input type="url" id="webUrl" placeholder="https://example.com" value="https://bing.com">
+        </div>
+
+        <!-- संख्या इनपुट -->
+        <div class="input-group">
+            <label for="tabCount">टैब की संख्या (Max 1000):</label>
+            <input type="number" id="tabCount" min="1" max="1000" value="6">
+        </div>
+    </div>
+    
+    <div class="btn-container">
+        <button onclick="generateTabs()">लोड करें और लाइव देखें (Enter)</button>
+        <button class="clear-btn" onclick="clearDashboard()">सब बंद करें</button>
+    </div>
+
+    <!-- स्टेटस दिखाने के लिए -->
+    <div id="statusBar" class="status-bar"></div>
+</div>
+
+<!-- यहीं पर सारी स्क्रीन्स एक साथ लाइव दिखाई देंगी -->
+<div id="dashboardGrid" class="dashboard-grid"></div>
+
+<script>
+function generateTabs() {
+    let url = document.getElementById('webUrl').value.trim();
+    let count = parseInt(document.getElementById('tabCount').value);
+    let grid = document.getElementById('dashboardGrid');
+    let statusBar = document.getElementById('statusBar');
+
+    // ऑटोमैटिक https जोड़ना
+    if (!url.match(/^https?:\/\//i)) {
+        url = 'https://' + url;
+    }
+
+    if (!url || url === 'https://') {
+        alert("कृपया एक सही वेबसाइट लिंक डालें!");
+        return;
+    }
+    if (isNaN(count) || count < 1 || count > 1000) {
+        alert("कृपया 1 से 1000 के बीच की संख्या दर्ज करें!");
+        return;
+    }
+
+    // पहले से खुले बॉक्सेस को साफ़ करना
+    grid.innerHTML = "";
+
+    // स्टेटस अपडेट
+    statusBar.style.display = "block";
+    statusBar.innerText = `कुल लाइव टैब ओपन: ${count}`;
+
+    // लूप चलाकर स्क्रीन के अंदर ही सारे टैब (iFrames) बनाना
+    for (let i = 1; i <= count; i++) {
+        // एक बॉक्स बनाना
+        let tabBox = document.createElement('div');
+        tabBox.className = 'tab-box';
+
+        // बॉक्स का हेडर (ताकि पता चले कौन सा नंबर है)
+        let tabHeader = document.createElement('div');
+        tabHeader.className = 'tab-header';
+        tabHeader.innerHTML = `<span>टैब #${i}</span> <span style="color:#4ade80;">Running...</span>`;
+
+        // लाइव स्क्रीन (iFrame)
+        let iframe = document.createElement('iframe');
+        iframe.src = url;
+        iframe.loading = "lazy"; // कंप्यूटर स्लो न हो इसलिए लेज़ी लोडिंग
+
+        // सबको आपस में जोड़ना
+        tabBox.appendChild(tabHeader);
+        tabBox.appendChild(iframe);
+        grid.appendChild(tabBox);
+    }
+}
+
+function clearDashboard() {
+    document.getElementById('dashboardGrid').innerHTML = "";
+    let statusBar = document.getElementById('statusBar');
+    statusBar.innerText = "";
+    statusBar.style.display = "none";
+}
+
+// Enter कीबोर्ड बटन सपोर्ट
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Enter') {
+        generateTabs();
+    }
+});
+</script>
+
+</body>
+</html>
